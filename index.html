@@ -1,0 +1,1716 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Funnel Architect — Estrategia de Ventas con IA</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,600;0,900;1,300&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0d0f;
+    --surface: #141418;
+    --surface2: #1c1c22;
+    --border: #2a2a35;
+    --accent: #c8a96e;
+    --accent2: #7c6ee0;
+    --accent3: #4ecdc4;
+    --text: #e8e6e0;
+    --text-muted: #7a7870;
+    --text-dim: #4a4845;
+    --danger: #e05c6e;
+    --success: #5ce08a;
+    --step-colors: #c8a96e, #7c6ee0, #4ecdc4, #e05c6e, #f0a500, #5ce08a, #c8a96e, #7c6ee0, #4ecdc4, #e05c6e;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* HEADER */
+  .app-header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(20px);
+  }
+
+  .header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 0 0.75rem;
+  }
+
+  .logo {
+    font-family: 'Fraunces', serif;
+    font-size: 1.4rem;
+    font-weight: 900;
+    color: var(--accent);
+    letter-spacing: -0.02em;
+  }
+
+  .logo span { color: var(--text-muted); font-weight: 300; }
+
+  .api-config {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .api-input {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 0.4rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-family: 'DM Sans', sans-serif;
+    width: 300px;
+  }
+
+  .api-input:focus { outline: none; border-color: var(--accent); }
+
+  .api-badge {
+    font-size: 0.65rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: 20px;
+    background: rgba(92,224,138,0.1);
+    color: var(--success);
+    border: 1px solid rgba(92,224,138,0.2);
+  }
+
+  .api-badge.disconnected {
+    background: rgba(224,92,110,0.1);
+    color: var(--danger);
+    border-color: rgba(224,92,110,0.2);
+  }
+
+  /* STEPPER NAV */
+  .stepper {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+    gap: 0;
+  }
+
+  .stepper::-webkit-scrollbar { display: none; }
+
+  .step-item {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    cursor: pointer;
+  }
+
+  .step-bubble {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    font-weight: 600;
+    border: 2px solid var(--border);
+    background: var(--surface2);
+    color: var(--text-muted);
+    transition: all 0.3s;
+    position: relative;
+  }
+
+  .step-label {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    margin-left: 0.4rem;
+    white-space: nowrap;
+    transition: color 0.3s;
+  }
+
+  .step-connector {
+    width: 24px;
+    height: 1px;
+    background: var(--border);
+    margin: 0 0.3rem;
+    flex-shrink: 0;
+    transition: background 0.3s;
+  }
+
+  .step-item.active .step-bubble {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--bg);
+    box-shadow: 0 0 16px rgba(200,169,110,0.4);
+  }
+
+  .step-item.active .step-label { color: var(--accent); font-weight: 600; }
+
+  .step-item.done .step-bubble {
+    background: rgba(92,224,138,0.15);
+    border-color: var(--success);
+    color: var(--success);
+  }
+
+  .step-item.done .step-label { color: var(--success); }
+  .step-item.done + .step-connector { background: var(--success); opacity: 0.4; }
+
+  /* MAIN LAYOUT */
+  .main {
+    display: grid;
+    grid-template-columns: 1fr 280px;
+    gap: 0;
+    min-height: calc(100vh - 120px);
+  }
+
+  .content-area {
+    padding: 2rem;
+    border-right: 1px solid var(--border);
+  }
+
+  /* MEMORY SIDEBAR */
+  .memory-sidebar {
+    padding: 1.5rem;
+    position: sticky;
+    top: 120px;
+    height: fit-content;
+    max-height: calc(100vh - 140px);
+    overflow-y: auto;
+  }
+
+  .memory-sidebar::-webkit-scrollbar { width: 3px; }
+  .memory-sidebar::-webkit-scrollbar-track { background: transparent; }
+  .memory-sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  .memory-title {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--text-muted);
+    margin-bottom: 1rem;
+    font-weight: 600;
+  }
+
+  .memory-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
+    transition: border-color 0.3s;
+  }
+
+  .memory-card.has-data { border-color: rgba(200,169,110,0.3); }
+
+  .memory-card-label {
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-dim);
+    margin-bottom: 0.35rem;
+  }
+
+  .memory-card-value {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    line-height: 1.4;
+    font-style: italic;
+  }
+
+  .memory-card-value.filled {
+    color: var(--text);
+    font-style: normal;
+  }
+
+  /* HEALTH BAR */
+  .health-bar-wrap {
+    margin-bottom: 1.25rem;
+  }
+
+  .health-bar-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    margin-bottom: 0.4rem;
+  }
+
+  .health-bar {
+    height: 4px;
+    background: var(--surface2);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .health-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent3));
+    border-radius: 4px;
+    transition: width 0.5s ease;
+  }
+
+  /* STEP PANEL */
+  .step-panel { display: none; }
+  .step-panel.active { display: block; }
+
+  .step-header {
+    margin-bottom: 2rem;
+  }
+
+  .step-number {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--text-muted);
+    margin-bottom: 0.5rem;
+  }
+
+  .step-title {
+    font-family: 'Fraunces', serif;
+    font-size: 2rem;
+    font-weight: 600;
+    color: var(--text);
+    line-height: 1.1;
+    margin-bottom: 0.5rem;
+  }
+
+  .step-subtitle {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+  }
+
+  /* FORM ELEMENTS */
+  .field-group {
+    margin-bottom: 1.5rem;
+  }
+
+  .field-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 0.5rem;
+    display: block;
+  }
+
+  .field-input, .field-textarea {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-family: 'DM Sans', sans-serif;
+    transition: border-color 0.2s;
+  }
+
+  .field-textarea {
+    resize: vertical;
+    min-height: 100px;
+    line-height: 1.6;
+  }
+
+  .field-input:focus, .field-textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+    background: rgba(200,169,110,0.03);
+  }
+
+  .field-row {
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+  }
+
+  .field-row .field-input, .field-row .field-textarea {
+    flex: 1;
+  }
+
+  /* BUTTONS */
+  .btn {
+    padding: 0.6rem 1.2rem;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 500;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    white-space: nowrap;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: var(--bg);
+  }
+
+  .btn-primary:hover { background: #d4b87a; transform: translateY(-1px); }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--accent);
+    border: 1px solid rgba(200,169,110,0.3);
+  }
+
+  .btn-ghost:hover { background: rgba(200,169,110,0.08); }
+
+  .btn-surface {
+    background: var(--surface2);
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+  }
+
+  .btn-surface:hover { background: var(--border); color: var(--text); }
+
+  .btn-ai {
+    background: linear-gradient(135deg, rgba(124,110,224,0.2), rgba(78,205,196,0.2));
+    color: var(--accent2);
+    border: 1px solid rgba(124,110,224,0.3);
+  }
+
+  .btn-ai:hover { background: linear-gradient(135deg, rgba(124,110,224,0.3), rgba(78,205,196,0.3)); }
+
+  .btn-next {
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border);
+    padding: 0.75rem 2rem;
+    font-size: 0.9rem;
+    margin-top: 2rem;
+  }
+
+  .btn-next:hover { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+
+  .btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .btn-sm { padding: 0.4rem 0.8rem; font-size: 0.75rem; }
+
+  /* SUGGESTION CARDS */
+  .suggestions-grid {
+    display: grid;
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+  }
+
+  .suggestion-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+  }
+
+  .suggestion-card:hover {
+    border-color: var(--accent);
+    background: rgba(200,169,110,0.04);
+  }
+
+  .suggestion-card .apply-btn {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    opacity: 0;
+    font-size: 0.7rem;
+    padding: 0.25rem 0.6rem;
+    background: var(--accent);
+    color: var(--bg);
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+
+  .suggestion-card:hover .apply-btn { opacity: 1; }
+
+  .suggestion-card p {
+    font-size: 0.85rem;
+    line-height: 1.5;
+    color: var(--text);
+    padding-right: 3rem;
+  }
+
+  .suggestion-card .coherence-note {
+    margin-top: 0.5rem;
+    font-size: 0.72rem;
+    color: var(--accent3);
+    font-style: italic;
+  }
+
+  /* LOADING */
+  .ai-loading {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 0;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+  }
+
+  .loading-dots span {
+    display: inline-block;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--accent2);
+    animation: bounce 1.2s infinite;
+  }
+
+  .loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes bounce {
+    0%, 100% { transform: translateY(0); opacity: 0.4; }
+    50% { transform: translateY(-5px); opacity: 1; }
+  }
+
+  /* AVATAR CARDS */
+  .avatar-list { display: grid; gap: 0.75rem; margin-bottom: 1rem; }
+
+  .avatar-card {
+    background: var(--surface2);
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+  }
+
+  .avatar-card.selected {
+    border-color: var(--accent3);
+    background: rgba(78,205,196,0.05);
+  }
+
+  .avatar-card .avatar-name {
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .avatar-card .avatar-desc {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    line-height: 1.4;
+  }
+
+  .avatar-active-badge {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    font-size: 0.6rem;
+    padding: 0.2rem 0.5rem;
+    background: rgba(78,205,196,0.15);
+    color: var(--accent3);
+    border-radius: 20px;
+    border: 1px solid rgba(78,205,196,0.3);
+  }
+
+  /* PAIN POINTS */
+  .pain-list { display: grid; gap: 0.5rem; margin-bottom: 1rem; }
+
+  .pain-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.6rem 0.75rem;
+  }
+
+  .pain-item input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--text);
+    font-size: 0.85rem;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  .pain-item input:focus { outline: none; }
+
+  .pain-item .remove-btn {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    cursor: pointer;
+    font-size: 1rem;
+    padding: 0;
+    line-height: 1;
+    transition: color 0.2s;
+  }
+
+  .pain-item .remove-btn:hover { color: var(--danger); }
+
+  /* PAS SECTION */
+  .pas-block {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+    border-left: 3px solid transparent;
+    transition: border-color 0.3s;
+  }
+
+  .pas-block.problem { border-left-color: var(--danger); }
+  .pas-block.agitation { border-left-color: #f0a500; }
+  .pas-block.solution { border-left-color: var(--success); }
+
+  .pas-block-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+  }
+
+  .pas-block-title {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  .problem .pas-block-title { color: var(--danger); }
+  .agitation .pas-block-title { color: #f0a500; }
+  .solution .pas-block-title { color: var(--success); }
+
+  /* EMAIL SECTIONS */
+  .email-purpose-badge {
+    display: inline-block;
+    font-size: 0.65rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    margin-bottom: 1rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .email-asunto-row {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    margin-bottom: 0.75rem;
+  }
+
+  /* DIVIDER */
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 2rem 0;
+  }
+
+  /* TOAST */
+  .toast {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.75rem 1.25rem;
+    font-size: 0.85rem;
+    color: var(--text);
+    z-index: 999;
+    transform: translateY(100px);
+    opacity: 0;
+    transition: all 0.3s;
+  }
+
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast.success { border-color: rgba(92,224,138,0.4); }
+  .toast.error { border-color: rgba(224,92,110,0.4); color: var(--danger); }
+
+  /* QUESTIONNAIRE */
+  .questionnaire { margin-top: 1rem; }
+
+  .q-item {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .q-item .q-text {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: 0.5rem;
+    font-style: italic;
+  }
+
+  /* NAME SUGGESTION CARDS */
+  .names-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+  }
+
+  .name-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+  }
+
+  .name-card:hover, .name-card.selected {
+    border-color: var(--accent);
+    background: rgba(200,169,110,0.06);
+  }
+
+  .name-card .name-text {
+    font-family: 'Fraunces', serif;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 0.25rem;
+  }
+
+  .name-card .name-why {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+  }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 5px; }
+
+  /* UTILS */
+  .text-muted { color: var(--text-muted); }
+  .flex { display: flex; }
+  .gap-2 { gap: 0.5rem; }
+  .gap-3 { gap: 0.75rem; }
+  .flex-wrap { flex-wrap: wrap; }
+  .mt-1 { margin-top: 0.25rem; }
+  .mt-2 { margin-top: 0.5rem; }
+  .mt-3 { margin-top: 0.75rem; }
+  .hidden { display: none !important; }
+  .w-full { width: 100%; }
+</style>
+</head>
+<body>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- HEADER -->
+<header class="app-header">
+  <div class="header-top">
+    <div class="logo">Funnel<span>Architect</span></div>
+    <div class="api-config">
+      <input class="api-input" type="password" id="apiKeyInput" placeholder="AIza... (tu API Key de Google AI Studio)" oninput="checkApiKey()">
+      <span class="api-badge disconnected" id="apiBadge">● Sin conexión</span>
+    </div>
+  </div>
+
+  <nav class="stepper" id="stepper">
+    <!-- Steps rendered by JS -->
+  </nav>
+</header>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="content-area">
+
+    <!-- STEP 1: PRODUCTO -->
+    <div class="step-panel active" id="step-1">
+      <div class="step-header">
+        <div class="step-number">Paso 1 de 10</div>
+        <h1 class="step-title">Tu Producto</h1>
+        <p class="step-subtitle">Todo el funnel nace aquí. Define qué vendes antes de pensar en a quién o cómo.</p>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">Tipo de producto o servicio</label>
+        <div class="field-row">
+          <input class="field-input" id="productType" placeholder="Ej: Consultoría de marketing digital, Curso de yoga, SaaS de facturación..." oninput="updateMemory()">
+          <button class="btn btn-ai" onclick="suggestNames()">✦ Generar nombres</button>
+        </div>
+        <div id="namesGrid" class="names-grid hidden"></div>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">Nombre comercial elegido</label>
+        <input class="field-input" id="productName" placeholder="El nombre de tu oferta" oninput="updateMemory()">
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">Promesa de transformación principal</label>
+        <div class="field-row">
+          <textarea class="field-textarea" id="productPromise" placeholder="¿Qué cambia en la vida de tu cliente después de trabajar contigo?" oninput="updateMemory()" style="min-height:70px"></textarea>
+          <button class="btn btn-ai btn-sm" onclick="improvePromise()" style="align-self:flex-start;margin-top:0">✦ Mejorar</button>
+        </div>
+        <div id="promiseSuggestions" class="suggestions-grid hidden"></div>
+      </div>
+
+      <div id="questionnaireSection" class="hidden">
+        <div class="divider"></div>
+        <h3 style="font-family:'Fraunces',serif;font-size:1.1rem;margin-bottom:0.25rem">Cuestionario Estratégico</h3>
+        <p class="text-muted" style="font-size:0.82rem;margin-bottom:1rem">Responde para que la IA construya tu oferta irresistible</p>
+        <div class="questionnaire" id="questionnaireItems"></div>
+        <button class="btn btn-primary" onclick="generateOffer()" id="generateOfferBtn">✦ Generar Oferta Irresistible</button>
+        <div id="offerResults" class="suggestions-grid hidden" style="margin-top:1rem"></div>
+      </div>
+
+      <button class="btn btn-next w-full" onclick="nextStep()">Siguiente: Buyer Persona →</button>
+    </div>
+
+    <!-- STEP 2: BUYER PERSONA -->
+    <div class="step-panel" id="step-2">
+      <div class="step-header">
+        <div class="step-number">Paso 2 de 10</div>
+        <h1 class="step-title">Buyer Persona</h1>
+        <p class="step-subtitle">Define con precisión quién es tu cliente ideal. Un funnel que habla a todos no convierte a nadie.</p>
+      </div>
+
+      <div class="avatar-list" id="avatarList"></div>
+
+      <button class="btn btn-ghost" onclick="addAvatar()">+ Añadir perfil manualmente</button>
+      <button class="btn btn-ai" style="margin-left:0.5rem" onclick="suggestAvatars()">✦ Sugerir perfiles con IA</button>
+
+      <div id="avatarSuggestions" class="suggestions-grid hidden" style="margin-top:1rem"></div>
+
+      <div class="divider"></div>
+      <p style="font-size:0.8rem;color:var(--text-muted)">💡 <strong>Tip:</strong> Haz clic en un perfil para marcarlo como "Avatar Activo". El resto del funnel se construirá alrededor de ese cliente.</p>
+
+      <button class="btn btn-next w-full" onclick="nextStep()">Siguiente: Puntos de Dolor →</button>
+    </div>
+
+    <!-- STEP 3: DOLORES -->
+    <div class="step-panel" id="step-3">
+      <div class="step-header">
+        <div class="step-number">Paso 3 de 10</div>
+        <h1 class="step-title">Puntos de Dolor</h1>
+        <p class="step-subtitle">Los síntomas reales que mantienen despierto a tu cliente por la noche. No son problemas técnicos — son emociones y frustraciones.</p>
+      </div>
+
+      <div class="pain-list" id="painList"></div>
+      <button class="btn btn-ghost btn-sm" onclick="addPain()">+ Añadir dolor manualmente</button>
+      <button class="btn btn-ai btn-sm" style="margin-left:0.5rem" onclick="suggestPains()">✦ Sugerir dolores con IA</button>
+
+      <div id="painSuggestions" class="suggestions-grid hidden" style="margin-top:1rem"></div>
+
+      <button class="btn btn-next w-full" onclick="nextStep()">Siguiente: Lead Magnet →</button>
+    </div>
+
+    <!-- STEP 4: LEAD MAGNET -->
+    <div class="step-panel" id="step-4">
+      <div class="step-header">
+        <div class="step-number">Paso 4 de 10</div>
+        <h1 class="step-title">Lead Magnet</h1>
+        <p class="step-subtitle">El regalo gratuito que atrae a tu cliente ideal. Debe aliviar UN dolor específico sin resolver el problema completo.</p>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">Tipo de Lead Magnet</label>
+        <div class="field-row">
+          <input class="field-input" id="lmType" placeholder="Ej: Guía PDF, Mini-curso, Plantilla, Checklist, Masterclass..." oninput="updateMemory()">
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">Título del Lead Magnet</label>
+        <div class="field-row">
+          <input class="field-input" id="lmTitle" placeholder="El título que hará que lo quieran de inmediato" oninput="updateMemory()">
+          <button class="btn btn-ai" onclick="suggestLeadMagnet()">✦ Sugerir ideas</button>
+        </div>
+      </div>
+
+      <div id="lmSuggestions" class="suggestions-grid hidden"></div>
+
+      <div class="field-group" style="margin-top:1rem">
+        <label class="field-label">¿Qué aprende o consigue el usuario con este lead magnet?</label>
+        <textarea class="field-textarea" id="lmValue" placeholder="Describe el valor concreto que aporta..." oninput="updateMemory()" style="min-height:80px"></textarea>
+      </div>
+
+      <button class="btn btn-next w-full" onclick="nextStep()">Siguiente: Email 1 →</button>
+    </div>
+
+    <!-- STEPS 5-9: EMAILS E1-E5 -->
+    <div class="step-panel" id="step-5">
+      <div class="step-header">
+        <div class="step-number">Paso 5 de 10</div>
+        <h1 class="step-title">Email 1 — Entrega & Bienvenida</h1>
+        <p class="step-subtitle">Se envía inmediatamente. Entrega el lead magnet, preséntate brevemente y establece la expectativa de los próximos emails.</p>
+      </div>
+      <div style="margin-bottom:1rem"><span class="email-purpose-badge" style="background:rgba(200,169,110,0.1);color:var(--accent);border:1px solid rgba(200,169,110,0.2)">🎁 Entrega del regalo</span></div>
+      <div id="email1Form">
+        <div class="field-group">
+          <label class="field-label">Asunto del email</label>
+          <div class="field-row">
+            <input class="field-input" id="e1_subject" placeholder="Aquí tienes tu [recurso]..." oninput="updateEmailMemory(1)">
+            <button class="btn btn-ai" onclick="suggestEmailSubject(1)">✦ Sugerir asunto</button>
+          </div>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Cuerpo del email</label>
+          <div class="field-row">
+            <textarea class="field-textarea" id="e1_body" placeholder="El contenido del email..." oninput="updateEmailMemory(1)" style="min-height:160px"></textarea>
+          </div>
+          <button class="btn btn-ai" style="margin-top:0.5rem" onclick="generateEmail(1)">✦ Generar email completo</button>
+        </div>
+        <div id="e1_suggestions" class="suggestions-grid hidden"></div>
+      </div>
+      <button class="btn btn-next w-full" onclick="nextStep()">Siguiente: Email 2 →</button>
+    </div>
+
+    <div class="step-panel" id="step-6">
+      <div class="step-header">
+        <div class="step-number">Paso 6 de 10</div>
+        <h1 class="step-title">Email 2 — Tu Historia & Autoridad</h1>
+        <p class="step-subtitle">Humaniza la relación. Cuenta tu historia personal relacionada con el problema y establece por qué deberían escucharte.</p>
+      </div>
+      <div style="margin-bottom:1rem"><span class="email-purpose-badge" style="background:rgba(124,110,224,0.1);color:var(--accent2);border:1px solid rgba(124,110,224,0.2)">👤 Autoridad & Conexión</span></div>
+      <div class="field-group">
+        <label class="field-label">Asunto del email</label>
+        <div class="field-row">
+          <input class="field-input" id="e2_subject" placeholder="Mi historia con [el problema]..." oninput="updateEmailMemory(2)">
+          <button class="btn btn-ai" onclick="suggestEmailSubject(2)">✦ Sugerir asunto</button>
+        </div>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Cuerpo del email</label>
+        <div class="field-row">
+          <textarea class="field-textarea" id="e2_body" placeholder="..." oninput="updateEmailMemory(2)" style="min-height:160px"></textarea>
+        </div>
+        <button class="btn btn-ai" style="margin-top:0.5rem" onclick="generateEmail(2)">✦ Generar email completo</button>
+      </div>
+      <div id="e2_suggestions" class="suggestions-grid hidden"></div>
+      <button class="btn btn-next w-full" onclick="nextStep()">Siguiente: Email 3 →</button>
+    </div>
+
+    <div class="step-panel" id="step-7">
+      <div class="step-header">
+        <div class="step-number">Paso 7 de 10</div>
+        <h1 class="step-title">Email 3 — Casos de Éxito</h1>
+        <p class="step-subtitle">Prueba social real. Muestra resultados concretos de clientes anteriores para que el lector se vea reflejado.</p>
+      </div>
+      <div style="margin-bottom:1rem"><span class="email-purpose-badge" style="background:rgba(78,205,196,0.1);color:var(--accent3);border:1px solid rgba(78,205,196,0.2)">⭐ Prueba Social</span></div>
+      <div class="field-group">
+        <label class="field-label">Asunto del email</label>
+        <div class="field-row">
+          <input class="field-input" id="e3_subject" placeholder="Cómo [cliente] consiguió [resultado]..." oninput="updateEmailMemory(3)">
+          <button class="btn btn-ai" onclick="suggestEmailSubject(3)">✦ Sugerir asunto</button>
+        </div>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Cuerpo del email</label>
+        <div class="field-row">
+          <textarea class="field-textarea" id="e3_body" placeholder="..." oninput="updateEmailMemory(3)" style="min-height:160px"></textarea>
+        </div>
+        <button class="btn btn-ai" style="margin-top:0.5rem" onclick="generateEmail(3)">✦ Generar email completo</button>
+      </div>
+      <div id="e3_suggestions" class="suggestions-grid hidden"></div>
+      <button class="btn btn-next w-full" onclick="nextStep()">Siguiente: Email 4 →</button>
+    </div>
+
+    <div class="step-panel" id="step-8">
+      <div class="step-header">
+        <div class="step-number">Paso 8 de 10</div>
+        <h1 class="step-title">Email 4 — Objeciones</h1>
+        <p class="step-subtitle">Anticipa y destruye las dudas más comunes: precio, tiempo, "no es para mí". Este email filtra y convence.</p>
+      </div>
+      <div style="margin-bottom:1rem"><span class="email-purpose-badge" style="background:rgba(224,92,110,0.1);color:var(--danger);border:1px solid rgba(224,92,110,0.2)">🛡 Romper objeciones</span></div>
+      <div class="field-group">
+        <label class="field-label">Asunto del email</label>
+        <div class="field-row">
+          <input class="field-input" id="e4_subject" placeholder="La razón por la que crees que [X] no funciona para ti..." oninput="updateEmailMemory(4)">
+          <button class="btn btn-ai" onclick="suggestEmailSubject(4)">✦ Sugerir asunto</button>
+        </div>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Cuerpo del email</label>
+        <div class="field-row">
+          <textarea class="field-textarea" id="e4_body" placeholder="..." oninput="updateEmailMemory(4)" style="min-height:160px"></textarea>
+        </div>
+        <button class="btn btn-ai" style="margin-top:0.5rem" onclick="generateEmail(4)">✦ Generar email completo</button>
+      </div>
+      <div id="e4_suggestions" class="suggestions-grid hidden"></div>
+      <button class="btn btn-next w-full" onclick="nextStep()">Siguiente: Email 5 →</button>
+    </div>
+
+    <div class="step-panel" id="step-9">
+      <div class="step-header">
+        <div class="step-number">Paso 9 de 10</div>
+        <h1 class="step-title">Email 5 — Cierre & Oferta</h1>
+        <p class="step-subtitle">El email de la decisión. Presenta la oferta con urgencia real y un CTA claro hacia la página de venta.</p>
+      </div>
+      <div style="margin-bottom:1rem"><span class="email-purpose-badge" style="background:rgba(92,224,138,0.1);color:var(--success);border:1px solid rgba(92,224,138,0.2)">🚀 Oferta & Cierre</span></div>
+      <div class="field-group">
+        <label class="field-label">Asunto del email</label>
+        <div class="field-row">
+          <input class="field-input" id="e5_subject" placeholder="Última oportunidad de [beneficio clave]..." oninput="updateEmailMemory(5)">
+          <button class="btn btn-ai" onclick="suggestEmailSubject(5)">✦ Sugerir asunto</button>
+        </div>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Cuerpo del email</label>
+        <div class="field-row">
+          <textarea class="field-textarea" id="e5_body" placeholder="..." oninput="updateEmailMemory(5)" style="min-height:160px"></textarea>
+        </div>
+        <button class="btn btn-ai" style="margin-top:0.5rem" onclick="generateEmail(5)">✦ Generar email completo</button>
+      </div>
+      <div id="e5_suggestions" class="suggestions-grid hidden"></div>
+      <button class="btn btn-next w-full" onclick="nextStep()">Siguiente: Página de Venta →</button>
+    </div>
+
+    <!-- STEP 10: PÁGINA DE VENTA (PAS) -->
+    <div class="step-panel" id="step-10">
+      <div class="step-header">
+        <div class="step-number">Paso 10 de 10</div>
+        <h1 class="step-title">Página de Venta</h1>
+        <p class="step-subtitle">El mensaje final. Usaremos la fórmula PAS (Problema → Agitación → Solución) construida sobre todo lo anterior.</p>
+      </div>
+
+      <div class="flex gap-3" style="margin-bottom:1.5rem">
+        <button class="btn btn-primary" onclick="generateFullPAS()">✦ Generar Borrador Completo (P+A+S)</button>
+      </div>
+
+      <div class="pas-block problem">
+        <div class="pas-block-header">
+          <span class="pas-block-title">P — Problema</span>
+          <button class="btn btn-ai btn-sm" onclick="generatePAS('p')">✦ Sugerir</button>
+        </div>
+        <textarea class="field-textarea w-full" id="pas_p" placeholder="Describe el problema central que sufre tu cliente. Habla de sus síntomas, no de la causa técnica..." oninput="updateMemory()" style="min-height:120px;background:transparent;border:none;padding:0;font-size:0.88rem"></textarea>
+        <div id="pas_p_suggestions" class="suggestions-grid hidden"></div>
+      </div>
+
+      <div class="pas-block agitation">
+        <div class="pas-block-header">
+          <span class="pas-block-title">A — Agitación</span>
+          <button class="btn btn-ai btn-sm" onclick="generatePAS('a')">✦ Sugerir</button>
+        </div>
+        <textarea class="field-textarea w-full" id="pas_a" placeholder="Amplifica las consecuencias si el problema no se resuelve. ¿Qué pasa si sigue igual en 6 meses?" oninput="updateMemory()" style="min-height:120px;background:transparent;border:none;padding:0;font-size:0.88rem"></textarea>
+        <div id="pas_a_suggestions" class="suggestions-grid hidden"></div>
+      </div>
+
+      <div class="pas-block solution">
+        <div class="pas-block-header">
+          <span class="pas-block-title">S — Solución</span>
+          <button class="btn btn-ai btn-sm" onclick="generatePAS('s')">✦ Sugerir</button>
+        </div>
+        <textarea class="field-textarea w-full" id="pas_s" placeholder="Presenta tu producto como el puente entre el dolor actual y la vida deseada. Sin tecnicismos, con beneficios." oninput="updateMemory()" style="min-height:120px;background:transparent;border:none;padding:0;font-size:0.88rem"></textarea>
+        <div id="pas_s_suggestions" class="suggestions-grid hidden"></div>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">CTA principal (texto del botón / llamada a acción)</label>
+        <div class="field-row">
+          <input class="field-input" id="salesCTA" placeholder="Ej: Reservar mi plaza, Quiero empezar hoy, Ver precios..." oninput="updateMemory()">
+          <button class="btn btn-ai" onclick="suggestCTA()">✦ Sugerir CTAs</button>
+        </div>
+        <div id="ctaSuggestions" class="suggestions-grid hidden"></div>
+      </div>
+
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:1.25rem;margin-top:1rem">
+        <p style="font-size:0.75rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-muted);margin-bottom:0.5rem">🎉 Funnel completado</p>
+        <p style="font-size:0.85rem;color:var(--text-muted)">Has construido toda la arquitectura estratégica de tu funnel. Exporta cada sección o usa este documento como guía para implementarlo en tu plataforma.</p>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- MEMORY SIDEBAR -->
+  <aside class="memory-sidebar">
+    <div class="memory-title">⚡ Memoria del Funnel</div>
+
+    <div class="health-bar-wrap">
+      <div class="health-bar-label">
+        <span>Salud del funnel</span>
+        <span id="healthPercent">0%</span>
+      </div>
+      <div class="health-bar">
+        <div class="health-bar-fill" id="healthFill" style="width:0%"></div>
+      </div>
+    </div>
+
+    <div class="memory-card" id="mem-product">
+      <div class="memory-card-label">🏷 Producto</div>
+      <div class="memory-card-value" id="mem-product-val">Sin definir</div>
+    </div>
+    <div class="memory-card" id="mem-promise">
+      <div class="memory-card-label">✨ Promesa</div>
+      <div class="memory-card-value" id="mem-promise-val">Sin definir</div>
+    </div>
+    <div class="memory-card" id="mem-avatar">
+      <div class="memory-card-label">👤 Avatar Activo</div>
+      <div class="memory-card-value" id="mem-avatar-val">Sin definir</div>
+    </div>
+    <div class="memory-card" id="mem-pains">
+      <div class="memory-card-label">💢 Dolores clave</div>
+      <div class="memory-card-value" id="mem-pains-val">Sin definir</div>
+    </div>
+    <div class="memory-card" id="mem-lm">
+      <div class="memory-card-label">🎁 Lead Magnet</div>
+      <div class="memory-card-value" id="mem-lm-val">Sin definir</div>
+    </div>
+    <div class="memory-card" id="mem-pas">
+      <div class="memory-card-label">📝 Mensaje PAS</div>
+      <div class="memory-card-value" id="mem-pas-val">Sin definir</div>
+    </div>
+  </aside>
+</div>
+
+<script>
+// ========== STATE ==========
+const state = {
+  currentStep: 1,
+  completedSteps: new Set(),
+  apiKey: '',
+  product: { type: '', name: '', promise: '', questionnaire: [], offerChosen: '' },
+  avatars: [],
+  activeAvatarIndex: -1,
+  pains: [],
+  leadMagnet: { type: '', title: '', value: '' },
+  emails: { 1:{subject:'',body:''}, 2:{subject:'',body:''}, 3:{subject:'',body:''}, 4:{subject:'',body:''}, 5:{subject:'',body:''} },
+  pas: { p: '', a: '', s: '' },
+  salesCTA: ''
+};
+
+const STEPS = [
+  { id: 1, label: 'Producto' },
+  { id: 2, label: 'Buyer Persona' },
+  { id: 3, label: 'Dolores' },
+  { id: 4, label: 'Lead Magnet' },
+  { id: 5, label: 'E1' },
+  { id: 6, label: 'E2' },
+  { id: 7, label: 'E3' },
+  { id: 8, label: 'E4' },
+  { id: 9, label: 'E5' },
+  { id: 10, label: 'Venta' }
+];
+
+// ========== INIT ==========
+function init() {
+  renderStepper();
+  addPain(); addPain(); addPain();
+  addAvatar();
+}
+
+function renderStepper() {
+  const nav = document.getElementById('stepper');
+  nav.innerHTML = STEPS.map((s, i) => `
+    <div class="step-item ${state.currentStep === s.id ? 'active' : ''} ${state.completedSteps.has(s.id) ? 'done' : ''}" onclick="goToStep(${s.id})">
+      <div class="step-bubble">${state.completedSteps.has(s.id) ? '✓' : s.id}</div>
+      <div class="step-label">${s.label}</div>
+    </div>
+    ${i < STEPS.length - 1 ? '<div class="step-connector"></div>' : ''}
+  `).join('');
+}
+
+function goToStep(n) {
+  document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('step-' + n).classList.add('active');
+  state.currentStep = n;
+  renderStepper();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function nextStep() {
+  state.completedSteps.add(state.currentStep);
+  goToStep(Math.min(state.currentStep + 1, 10));
+  updateHealth();
+}
+
+// ========== API ==========
+function checkApiKey() {
+  const key = document.getElementById('apiKeyInput').value.trim();
+  state.apiKey = key;
+  const badge = document.getElementById('apiBadge');
+  if (key.startsWith('AIza') && key.length > 20) {
+    badge.textContent = '● Verificando...';
+    badge.className = 'api-badge';
+    testApiKey(key, badge);
+  } else {
+    badge.textContent = '● Sin conexión';
+    badge.className = 'api-badge disconnected';
+  }
+}
+
+async function testApiKey(key, badge) {
+  try {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=${key}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contents: [{ parts: [{ text: 'hola' }] }], generationConfig: { maxOutputTokens: 5 } })
+      }
+    );
+    const data = await res.json();
+    if (data.error) {
+      badge.textContent = '● Error: ' + data.error.message.substring(0, 30);
+      badge.className = 'api-badge disconnected';
+    } else {
+      badge.textContent = '● Conectado ✓';
+      badge.className = 'api-badge';
+      showToast('API conectada correctamente ✓', 'success');
+    }
+  } catch(e) {
+    badge.textContent = '● Error de red';
+    badge.className = 'api-badge disconnected';
+    showToast('Error de red: ' + e.message, 'error');
+  }
+}
+
+async function askClaude(systemPrompt, userPrompt, targetEl) {
+  if (!state.apiKey) {
+    showToast('Introduce tu API Key de Google AI Studio primero', 'error');
+    return null;
+  }
+
+  // Show loading in targetEl if provided
+  if (targetEl) {
+    targetEl.innerHTML = `<div class="ai-loading"><div class="loading-dots"><span></span><span></span><span></span></div> La IA está pensando...</div>`;
+    targetEl.classList.remove('hidden');
+  }
+
+  const fullPrompt = systemPrompt + '\n\n' + userPrompt;
+
+  try {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=${state.apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: fullPrompt }] }],
+          generationConfig: { maxOutputTokens: 1200, temperature: 0.75 }
+        })
+      }
+    );
+
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      const msg = errData?.error?.message || `HTTP ${res.status}`;
+      throw new Error(msg);
+    }
+
+    const data = await res.json();
+
+    if (data.error) throw new Error(data.error.message);
+    if (!data.candidates || !data.candidates[0]) throw new Error('Respuesta vacía de la API');
+
+    const raw = data.candidates[0].content.parts[0].text || '';
+    // Strip markdown code fences if present
+    return raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim();
+
+  } catch (e) {
+    const msg = e.message || 'Error desconocido';
+    if (targetEl) {
+      targetEl.innerHTML = `<div class="ai-loading" style="color:var(--danger)">⚠ ${msg}</div>`;
+    }
+    showToast('Error: ' + msg, 'error');
+    console.error('API Error:', e);
+    return null;
+  }
+}
+
+// ========== CONTEXT BUILDER ==========
+function getContext() {
+  return `
+PRODUCTO: ${state.product.name || state.product.type || 'No definido'}
+TIPO: ${state.product.type || ''}
+PROMESA: ${state.product.promise || 'No definida'}
+OFERTA ELEGIDA: ${state.product.offerChosen || ''}
+AVATAR ACTIVO: ${state.avatars[state.activeAvatarIndex]?.name || 'No definido'} — ${state.avatars[state.activeAvatarIndex]?.description || ''}
+PUNTOS DE DOLOR: ${state.pains.filter(Boolean).join(' | ') || 'No definidos'}
+LEAD MAGNET: ${state.leadMagnet.title || 'No definido'} (${state.leadMagnet.type || ''})
+  `.trim();
+}
+
+// ========== STEP 1 FUNCTIONS ==========
+async function suggestNames() {
+  const type = document.getElementById('productType').value.trim();
+  if (!type) { showToast('Escribe el tipo de producto primero', 'error'); return; }
+  const grid = document.getElementById('namesGrid');
+  grid.classList.remove('hidden');
+  grid.innerHTML = `<div class="ai-loading" style="grid-column:1/-1"><div class="loading-dots"><span></span><span></span><span></span></div> Generando nombres comerciales...</div>`;
+
+  const text = await askClaude(
+    'Eres un experto en branding y naming para negocios. Responde ÚNICAMENTE con JSON válido, sin markdown ni texto adicional.',
+    `Tipo de producto/servicio: "${type}". Genera 3 nombres comerciales atractivos, memorables y únicos en español. Formato JSON: [{"name":"...","why":"..."},{"name":"...","why":"..."},{"name":"...","why":"..."}]`
+  );
+
+  if (!text) { grid.classList.add('hidden'); return; }
+  try {
+    const clean = text.replace(/```json|```/g, '').trim();
+    const names = JSON.parse(clean);
+    grid.innerHTML = names.map(n => `
+      <div class="name-card" onclick="selectName('${n.name.replace(/'/g,"\\'")}', this)">
+        <div class="name-text">${n.name}</div>
+        <div class="name-why">${n.why}</div>
+      </div>
+    `).join('');
+  } catch { grid.innerHTML = `<div style="color:var(--text-muted);font-size:0.82rem;grid-column:1/-1">${text}</div>`; }
+}
+
+function selectName(name, el) {
+  document.querySelectorAll('.name-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('productName').value = name;
+  state.product.name = name;
+  generateQuestionnaire();
+  updateMemory();
+}
+
+async function generateQuestionnaire() {
+  const section = document.getElementById('questionnaireSection');
+  const items = document.getElementById('questionnaireItems');
+  section.classList.remove('hidden');
+  items.innerHTML = `<div class="ai-loading"><div class="loading-dots"><span></span><span></span><span></span></div> Generando preguntas estratégicas...</div>`;
+
+  const text = await askClaude(
+    'Eres un estratega de ventas. Responde ÚNICAMENTE con JSON válido, sin markdown.',
+    `Producto: "${state.product.name}" (${state.product.type}). Genera un cuestionario de 4 preguntas estratégicas para construir la oferta irresistible. Las preguntas deben ayudar a identificar: el cliente ideal, el beneficio principal, el tiempo de resultado y qué lo diferencia. JSON: [{"q":"pregunta 1"},{"q":"pregunta 2"},{"q":"pregunta 3"},{"q":"pregunta 4"}]`
+  );
+
+  if (!text) return;
+  try {
+    const clean = text.replace(/```json|```/g, '').trim();
+    const qs = JSON.parse(clean);
+    state.product.questionnaire = qs.map(q => ({ q: q.q, a: '' }));
+    items.innerHTML = qs.map((q, i) => `
+      <div class="q-item">
+        <div class="q-text">${q.q}</div>
+        <div class="field-row">
+          <textarea class="field-textarea" id="q_${i}" placeholder="Tu respuesta..." oninput="state.product.questionnaire[${i}].a=this.value" style="min-height:60px;font-size:0.82rem"></textarea>
+          <button class="btn btn-ai btn-sm" onclick="suggestQAnswer(${i})" style="align-self:flex-start;margin-top:0;flex-shrink:0">✦</button>
+        </div>
+      </div>
+    `).join('');
+  } catch { items.textContent = text; }
+}
+
+async function suggestQAnswer(idx) {
+  const q = state.product.questionnaire[idx].q;
+  const el = document.getElementById('q_' + idx);
+  el.value = 'Generando...';
+  const text = await askClaude(
+    'Eres un experto en copywriting y estrategia de ventas. Da una respuesta concisa y práctica.',
+    `Producto: "${state.product.name}" (${state.product.type}). Pregunta: "${q}". Responde de forma concisa como si fuera el dueño del negocio. Máximo 2 frases.`
+  );
+  if (text) { el.value = text.trim(); state.product.questionnaire[idx].a = text.trim(); }
+}
+
+async function generateOffer() {
+  const btn = document.getElementById('generateOfferBtn');
+  btn.disabled = true; btn.textContent = 'Generando...';
+  const answers = state.product.questionnaire.map((q, i) => `${q.q}: ${q.a || 'Sin respuesta'}`).join('\n');
+  const results = document.getElementById('offerResults');
+
+  const text = await askClaude(
+    'Eres un copywriter experto. Responde ÚNICAMENTE con JSON válido, sin markdown.',
+    `Producto: "${state.product.name}" (${state.product.type}). Respuestas del cuestionario:\n${answers}\n\nGenera 3 promesas irresistibles diferentes. Cada una debe ser específica, creíble, sin porcentajes inventados. Enfocadas en resultado emocional o situacional. JSON: [{"promise":"...","note":"Por qué funciona"},{"promise":"...","note":"..."},{"promise":"...","note":"..."}]`
+  );
+
+  btn.disabled = false; btn.textContent = '✦ Generar Oferta Irresistible';
+  if (!text) return;
+  try {
+    const clean = text.replace(/```json|```/g, '').trim();
+    const offers = JSON.parse(clean);
+    results.innerHTML = offers.map(o => `
+      <div class="suggestion-card" onclick="applyOffer('${o.promise.replace(/'/g,"\\'")}')">
+        <button class="apply-btn">Aplicar</button>
+        <p>${o.promise}</p>
+        <div class="coherence-note">💡 ${o.note}</div>
+      </div>
+    `).join('');
+    results.classList.remove('hidden');
+  } catch { results.innerHTML = `<div style="font-size:0.82rem;color:var(--text-muted)">${text}</div>`; results.classList.remove('hidden'); }
+}
+
+function applyOffer(promise) {
+  document.getElementById('productPromise').value = promise;
+  state.product.promise = promise;
+  state.product.offerChosen = promise;
+  updateMemory();
+  showToast('Promesa aplicada ✓', 'success');
+}
+
+async function improvePromise() {
+  const current = document.getElementById('productPromise').value.trim();
+  if (!current) { showToast('Escribe algo primero', 'error'); return; }
+  const el = document.getElementById('promiseSuggestions');
+
+  const text = await askClaude(
+    'Eres un copywriter de respuesta directa. Responde ÚNICAMENTE con JSON válido, sin markdown.',
+    `Producto: "${state.product.name || state.product.type}". Promesa actual: "${current}". Genera 3 versiones mejoradas. Evita porcentajes inventados. Usa resultados emocionales y situacionales. JSON: [{"promise":"...","note":"..."},{"promise":"...","note":"..."},{"promise":"...","note":"..."}]`
+  );
+
+  if (!text) return;
+  try {
+    const clean = text.replace(/```json|```/g, '').trim();
+    const opts = JSON.parse(clean);
+    el.innerHTML = opts.map(o => `
+      <div class="suggestion-card" onclick="applyOffer('${o.promise.replace(/'/g,"\\'")}')">
+        <button class="apply-btn">Aplicar</button>
+        <p>${o.promise}</p>
+        <div class="coherence-note">💡 ${o.note}</div>
+      </div>
+    `).join('');
+    el.classList.remove('hidden');
+  } catch { el.innerHTML = text; el.classList.remove('hidden'); }
+}
+
+// ========== STEP 2: AVATARS ==========
+function addAvatar(name = '', desc = '') {
+  state.avatars.push({ name, description: desc });
+  renderAvatars();
+}
+
+function renderAvatars() {
+  const list = document.getElementById('avatarList');
+  if (!state.avatars.length) { list.innerHTML = ''; return; }
+  list.innerHTML = state.avatars.map((av, i) => `
+    <div class="avatar-card ${state.activeAvatarIndex === i ? 'selected' : ''}" onclick="setActiveAvatar(${i})">
+      ${state.activeAvatarIndex === i ? '<span class="avatar-active-badge">Avatar Activo</span>' : ''}
+      <input class="field-input" style="background:transparent;border:none;padding:0;font-weight:600;font-size:0.9rem;margin-bottom:0.25rem" placeholder="Nombre del perfil (ej: Emprendedor 30-45)" value="${av.name}" oninput="state.avatars[${i}].name=this.value;updateMemory()" onclick="event.stopPropagation()">
+      <textarea class="field-textarea" style="background:transparent;border:none;padding:0;font-size:0.8rem;min-height:60px" placeholder="Describe sus características: edad, situación, motivaciones, miedos..." oninput="state.avatars[${i}].description=this.value;updateMemory()" onclick="event.stopPropagation()">${av.description}</textarea>
+      <button class="btn btn-surface btn-sm" style="margin-top:0.5rem" onclick="event.stopPropagation();removeAvatar(${i})">🗑 Eliminar</button>
+    </div>
+  `).join('');
+}
+
+function setActiveAvatar(i) {
+  state.activeAvatarIndex = i;
+  renderAvatars();
+  updateMemory();
+  showToast('Avatar activo: ' + (state.avatars[i].name || 'Perfil ' + (i+1)));
+}
+
+function removeAvatar(i) {
+  state.avatars.splice(i, 1);
+  if (state.activeAvatarIndex === i) state.activeAvatarIndex = -1;
+  else if (state.activeAvatarIndex > i) state.activeAvatarIndex--;
+  renderAvatars();
+  updateMemory();
+}
+
+async function suggestAvatars() {
+  const el = document.getElementById('avatarSuggestions');
+  el.innerHTML = `<div class="ai-loading"><div class="loading-dots"><span></span><span></span><span></span></div> Generando perfiles...</div>`;
+  el.classList.remove('hidden');
+  const text = await askClaude(
+    'Eres un estratega de marketing. Responde ÚNICAMENTE con JSON válido, sin markdown.',
+    `Contexto del producto:\n${getContext()}\n\nGenera 3 perfiles de buyer persona muy específicos y distintos entre sí, coherentes con este producto. JSON: [{"name":"nombre del perfil","description":"descripción detallada: edad, situación, motivaciones y miedos específicos"},{"name":"...","description":"..."},{"name":"...","description":"..."}]`
+  );
+  if (!text) return;
+  try {
+    const clean = text.replace(/```json|```/g, '').trim();
+    const avatars = JSON.parse(clean);
+    el.innerHTML = avatars.map(av => `
+      <div class="suggestion-card" onclick="addAvatar('${av.name.replace(/'/g,"\\'")}', '${av.description.replace(/'/g,"\\'").replace(/\n/g,' ')}');document.getElementById('avatarSuggestions').classList.add('hidden')">
+        <button class="apply-btn">Añadir</button>
+        <p><strong>${av.name}</strong></p>
+        <p style="margin-top:0.25rem">${av.description}</p>
+      </div>
+    `).join('');
+    el.classList.remove('hidden');
+  } catch { el.innerHTML = text; el.classList.remove('hidden'); }
+}
+
+// ========== STEP 3: PAINS ==========
+function addPain(value = '') {
+  state.pains.push(value);
+  renderPains();
+}
+
+function renderPains() {
+  const list = document.getElementById('painList');
+  list.innerHTML = state.pains.map((p, i) => `
+    <div class="pain-item">
+      <span style="color:var(--danger);font-size:0.8rem">⚡</span>
+      <input placeholder="Ej: No puedo dormir pensando en los clientes que no tengo..." value="${p}" oninput="state.pains[${i}]=this.value;updateMemory()">
+      <button class="remove-btn" onclick="removePain(${i})">×</button>
+    </div>
+  `).join('');
+}
+
+function removePain(i) {
+  state.pains.splice(i, 1);
+  renderPains();
+  updateMemory();
+}
+
+async function suggestPains() {
+  const el = document.getElementById('painSuggestions');
+  const text = await askClaude(
+    'Eres un psicólogo del consumidor y copywriter. Responde ÚNICAMENTE con JSON válido, sin markdown.',
+    `Contexto:\n${getContext()}\n\nGenera 5 puntos de dolor MUY específicos para este avatar y producto. Deben ser síntomas emocionales y situacionales (no problemas técnicos). Escritos en primera persona como lo diría el cliente. JSON: [{"pain":"..."},{"pain":"..."},{"pain":"..."},{"pain":"..."},{"pain":"..."}]`
+  );
+  if (!text) return;
+  try {
+    const clean = text.replace(/```json|```/g, '').trim();
+    const pains = JSON.parse(clean);
+    el.innerHTML = pains.map(p => `
+      <div class="suggestion-card" onclick="applyPain('${p.pain.replace(/'/g,"\\'")}');this.style.opacity='0.4'">
+        <button class="apply-btn">Añadir</button>
+        <p>${p.pain}</p>
+      </div>
+    `).join('');
+    el.classList.remove('hidden');
+  } catch { el.innerHTML = text; el.classList.remove('hidden'); }
+}
+
+function applyPain(pain) {
+  const emptyIdx = state.pains.findIndex(p => !p);
+  if (emptyIdx >= 0) state.pains[emptyIdx] = pain;
+  else state.pains.push(pain);
+  renderPains();
+  updateMemory();
+}
+
+// ========== STEP 4: LEAD MAGNET ==========
+async function suggestLeadMagnet() {
+  const el = document.getElementById('lmSuggestions');
+  el.innerHTML = `<div class="ai-loading"><div class="loading-dots"><span></span><span></span><span></span></div> Generando ideas...</div>`;
+  el.classList.remove('hidden');
+  const text = await askClaude(
+    'Eres un experto en marketing de contenidos. Responde ÚNICAMENTE con JSON válido, sin markdown.',
+    `Contexto completo:\n${getContext()}\n\nGenera 3 ideas de lead magnet. Cada uno debe aliviar UN dolor específico sin resolver el problema completo. Deben estar 100% alineados con el producto final. JSON: [{"type":"tipo","title":"título atractivo","note":"por qué atrae al avatar y cualifica"},{"type":"...","title":"...","note":"..."},{"type":"...","title":"...","note":"..."}]`
+  );
+  if (!text) return;
+  try {
+    const clean = text.replace(/```json|```/g, '').trim();
+    const lms = JSON.parse(clean);
+    el.innerHTML = lms.map(l => `
+      <div class="suggestion-card" onclick="applyLeadMagnet('${l.type.replace(/'/g,"\\'")}','${l.title.replace(/'/g,"\\'")}')">
+        <button class="apply-btn">Aplicar</button>
+        <p><strong>${l.type}:</strong> ${l.title}</p>
+        <div class="coherence-note">💡 ${l.note}</div>
+      </div>
+    `).join('');
+    el.classList.remove('hidden');
+  } catch { el.innerHTML = text; el.classList.remove('hidden'); }
+}
+
+function applyLeadMagnet(type, title) {
+  document.getElementById('lmType').value = type;
+  document.getElementById('lmTitle').value = title;
+  state.leadMagnet.type = type;
+  state.leadMagnet.title = title;
+  updateMemory();
+  showToast('Lead magnet aplicado ✓', 'success');
+}
+
+// ========== STEPS 5-9: EMAILS ==========
+const EMAIL_PURPOSES = {
+  1: 'Email de bienvenida y entrega del lead magnet. Presenta al autor brevemente. Tono cálido, sin vender aún.',
+  2: 'Email de historia personal. Conecta emocionalmente. Cuenta cómo el autor vivió el mismo problema. Establece autoridad.',
+  3: 'Email de casos de éxito. Muestra 1-2 historias de clientes reales. Hace que el lector se vea reflejado.',
+  4: 'Email de objeciones. Anticipa las 3 objeciones principales (precio, tiempo, "no es para mí") y las derriba con lógica.',
+  5: 'Email de cierre. Presenta la oferta concreta, crea urgencia real, CTA directo a la página de venta.'
+};
+
+async function suggestEmailSubject(n) {
+  const el = document.getElementById('e' + n + '_suggestions');
+  const text = await askClaude(
+    'Eres un experto en email marketing. Responde ÚNICAMENTE con JSON válido, sin markdown.',
+    `Contexto del funnel:\n${getContext()}\nPropósito de este email: ${EMAIL_PURPOSES[n]}\n\nGenera 3 asuntos de email irresistibles, distintos entre sí, que generen apertura. JSON: [{"subject":"..."},{"subject":"..."},{"subject":"..."}]`
+  );
+  if (!text) return;
+  try {
+    const clean = text.replace(/```json|```/g, '').trim();
+    const subjects = JSON.parse(clean);
+    el.innerHTML = subjects.map(s => `
+      <div class="suggestion-card" onclick="document.getElementById('e${n}_subject').value='${s.subject.replace(/'/g,"\\'")}';state.emails[${n}].subject='${s.subject.replace(/'/g,"\\'")}';this.parentElement.classList.add('hidden');updateMemory()">
+        <button class="apply-btn">Aplicar</button>
+        <p>${s.subject}</p>
+      </div>
+    `).join('');
+    el.classList.remove('hidden');
+  } catch { el.innerHTML = text; el.classList.remove('hidden'); }
+}
+
+async function generateEmail(n) {
+  const el = document.getElementById('e' + n + '_suggestions');
+  const subjectEl = document.getElementById('e' + n + '_subject');
+  const bodyEl = document.getElementById('e' + n + '_body');
+  const subject = subjectEl.value;
+
+  const text = await askClaude(
+    'Eres un copywriter de email marketing de alto nivel. Escribe en español, tono cercano y directo.',
+    `Contexto del funnel:\n${getContext()}\nAsunto elegido: "${subject || 'Por definir'}"\nPropósito: ${EMAIL_PURPOSES[n]}\n\nEscribe el cuerpo completo del email. Sin saludos genéricos. Directo al punto. Máximo 300 palabras. Solo el texto del email.`
+  );
+
+  if (text) {
+    bodyEl.value = text.trim();
+    state.emails[n].body = text.trim();
+    updateMemory();
+    showToast('Email generado ✓', 'success');
+  }
+}
+
+function updateEmailMemory(n) {
+  state.emails[n].subject = document.getElementById('e' + n + '_subject').value;
+  state.emails[n].body = document.getElementById('e' + n + '_body').value;
+  updateMemory();
+}
+
+// ========== STEP 10: PAS ==========
+async function generateFullPAS() {
+  const btn = event.target;
+  const orig = btn.textContent;
+  btn.textContent = '⏳ Generando...';
+  btn.disabled = true;
+
+  const text = await askClaude(
+    'Eres un copywriter experto en páginas de venta. Responde ÚNICAMENTE con JSON válido. Sin markdown, sin bloques de código, sin explicaciones. Solo el JSON.',
+    `Contexto completo del funnel:\n${getContext()}\n\nEscribe un mensaje PAS completo para la página de venta. Usa lenguaje emocional y situacional, evita tecnicismos. Responde SOLO con este JSON (sin nada más): {"p":"texto del problema en 2-3 párrafos","a":"texto de agitación en 2-3 párrafos","s":"texto de la solución en 2-3 párrafos"}`
+  );
+
+  btn.textContent = orig;
+  btn.disabled = false;
+
+  if (!text) return;
+  try {
+    // Try to extract JSON even if there's extra text around it
+    const jsonMatch = text.match(/\{[\s\S]*"p"[\s\S]*"a"[\s\S]*"s"[\s\S]*\}/);
+    const jsonStr = jsonMatch ? jsonMatch[0] : text;
+    const pas = JSON.parse(jsonStr);
+    if (pas.p) { document.getElementById('pas_p').value = pas.p; state.pas.p = pas.p; }
+    if (pas.a) { document.getElementById('pas_a').value = pas.a; state.pas.a = pas.a; }
+    if (pas.s) { document.getElementById('pas_s').value = pas.s; state.pas.s = pas.s; }
+    updateMemory();
+    showToast('Borrador PAS generado ✓', 'success');
+  } catch(e) {
+    showToast('Error al procesar la respuesta. Inténtalo de nuevo.', 'error');
+  }
+}
+
+async function generatePAS(part) {
+  const labels = { p: 'Problema', a: 'Agitación', s: 'Solución' };
+  const instructions = {
+    p: 'Escribe SOLO el bloque PROBLEMA. Describe el dolor central en 2-3 párrafos desde la perspectiva emocional del cliente. Sin mencionar el producto todavía.',
+    a: `El problema identificado es: "${document.getElementById('pas_p').value || 'no definido aún'}". Ahora escribe SOLO el bloque AGITACIÓN: amplifica las consecuencias si este problema no se resuelve. ¿Qué pasa en 6 meses, en 1 año? 2-3 párrafos.`,
+    s: `Problema: "${document.getElementById('pas_p').value || ''}". Agitación: "${document.getElementById('pas_a').value || ''}". Ahora escribe SOLO el bloque SOLUCIÓN: presenta el producto como el puente. Beneficios concretos, no características. 2-3 párrafos.`
+  };
+
+  const el = document.getElementById('pas_' + part + '_suggestions');
+  const text = await askClaude(
+    'Eres un copywriter experto en páginas de venta. Responde ÚNICAMENTE con JSON válido, sin markdown.',
+    `Contexto del funnel:\n${getContext()}\n${instructions[part]}\n\nJSON: [{"text":"opción 1"},{"text":"opción 2"}]`
+  );
+
+  if (!text) return;
+  try {
+    const clean = text.replace(/```json|```/g, '').trim();
+    const opts = JSON.parse(clean);
+    el.innerHTML = opts.map(o => `
+      <div class="suggestion-card" onclick="document.getElementById('pas_${part}').value='${o.text.replace(/'/g,"\\'").replace(/\n/g,'\\n')}';state.pas['${part}']='${o.text.replace(/'/g,"\\'").replace(/\n/g,' ')}';this.parentElement.classList.add('hidden');updateMemory()">
+        <button class="apply-btn">Aplicar</button>
+        <p style="white-space:pre-line">${o.text}</p>
+      </div>
+    `).join('');
+    el.classList.remove('hidden');
+  } catch { el.innerHTML = text; el.classList.remove('hidden'); }
+}
+
+async function suggestCTA() {
+  const el = document.getElementById('ctaSuggestions');
+  const text = await askClaude(
+    'Eres un experto en conversión. Responde ÚNICAMENTE con JSON válido, sin markdown.',
+    `Contexto: ${getContext()}\n\nGenera 4 CTAs diferentes para el botón de compra. Deben ser orientados a acción y beneficio, no genéricos. JSON: [{"cta":"..."},{"cta":"..."},{"cta":"..."},{"cta":"..."}]`
+  );
+  if (!text) return;
+  try {
+    const clean = text.replace(/```json|```/g, '').trim();
+    const ctas = JSON.parse(clean);
+    el.innerHTML = ctas.map(c => `
+      <div class="suggestion-card" onclick="document.getElementById('salesCTA').value='${c.cta.replace(/'/g,"\\'")}';state.salesCTA='${c.cta.replace(/'/g,"\\'")}';this.parentElement.classList.add('hidden');updateMemory()">
+        <button class="apply-btn">Aplicar</button>
+        <p>${c.cta}</p>
+      </div>
+    `).join('');
+    el.classList.remove('hidden');
+  } catch { el.innerHTML = text; el.classList.remove('hidden'); }
+}
+
+// ========== MEMORY & HEALTH ==========
+function updateMemory() {
+  // Sync state from inputs
+  state.product.type = document.getElementById('productType')?.value || '';
+  state.product.name = document.getElementById('productName')?.value || '';
+  state.product.promise = document.getElementById('productPromise')?.value || '';
+  state.leadMagnet.type = document.getElementById('lmType')?.value || '';
+  state.leadMagnet.title = document.getElementById('lmTitle')?.value || '';
+  state.pains = [...document.querySelectorAll('.pain-item input')].map(i => i.value).filter(Boolean);
+
+  // Update sidebar
+  const setMem = (id, val, memId) => {
+    const el = document.getElementById(id);
+    const card = document.getElementById(memId);
+    if (val) { el.textContent = val; el.className = 'memory-card-value filled'; card.classList.add('has-data'); }
+    else { el.textContent = 'Sin definir'; el.className = 'memory-card-value'; card.classList.remove('has-data'); }
+  };
+
+  const productLabel = [state.product.name, state.product.type].filter(Boolean).join(' — ');
+  setMem('mem-product-val', productLabel, 'mem-product');
+  setMem('mem-promise-val', state.product.promise, 'mem-promise');
+  const av = state.avatars[state.activeAvatarIndex];
+  setMem('mem-avatar-val', av ? (av.name || 'Perfil sin nombre') : '', 'mem-avatar');
+  setMem('mem-pains-val', state.pains.slice(0, 2).join(', ') + (state.pains.length > 2 ? '...' : ''), 'mem-pains');
+  setMem('mem-lm-val', state.leadMagnet.title ? `${state.leadMagnet.type}: ${state.leadMagnet.title}` : '', 'mem-lm');
+  setMem('mem-pas-val', state.pas.p ? state.pas.p.substring(0, 60) + '...' : '', 'mem-pas');
+
+  updateHealth();
+}
+
+function updateHealth() {
+  const checks = [
+    state.product.name || state.product.type,
+    state.product.promise,
+    state.avatars.length > 0,
+    state.pains.filter(Boolean).length > 0,
+    state.leadMagnet.title,
+    state.emails[1].body,
+    state.emails[2].body,
+    state.emails[3].body || state.emails[4].body,
+    state.emails[5].body,
+    state.pas.p
+  ];
+  const pct = Math.round(checks.filter(Boolean).length / checks.length * 100);
+  document.getElementById('healthFill').style.width = pct + '%';
+  document.getElementById('healthPercent').textContent = pct + '%';
+}
+
+// ========== TOAST ==========
+function showToast(msg, type = '') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + type;
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+init();
+</script>
+</body>
+</html>
